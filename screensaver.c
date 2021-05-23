@@ -67,13 +67,17 @@ int main(int argc, char *argv[]) {
   extern int optind;
 
   // Process command line options.
-  while ((optchar = getopt(argc, argv, "g")) != -1) {
+  while ((optchar = getopt(argc, argv, "gq")) != -1) {
     switch (optchar) {
       case 'g':
 #ifndef PROFILE_BUILD
         graphicDemoFlag = true;
 #endif
         break;
+      case 'q':
+      {
+        quad_tree_flag = true;
+      } break;
       default:
         printf("Ignoring unrecognized option: %c\n", optchar);
         continue;
@@ -102,6 +106,13 @@ int main(int argc, char *argv[]) {
     input_file_path = DEFAULT_INPUT_FILE_PATH;
   }
   printf("Input file path is: %s\n", input_file_path);
+
+  if(quad_tree_flag) {
+    printf("using quad_tree\n");
+  }
+  else {
+    printf("using n^2\n");
+  }
 
   // Create and initialize the Line simulation environment.
   LineDemo *lineDemo = LineDemo_new();

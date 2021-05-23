@@ -53,7 +53,7 @@ static inline bool QuadTree_LineInRect(const Line* line, const QuadRect* rect) {
 
 
 // PUBLIC
-void QuadTree_Init(QuadTree* qt, const Line** lines, const int width, const int height, const int max_depth, const int max_elements) {
+void QuadTree_Init(QuadTree* qt, Line** lines, const int width, const int height, const int max_depth, const int max_elements) {
   assert(qt);
   assert(lines);
   assert(0 < width);

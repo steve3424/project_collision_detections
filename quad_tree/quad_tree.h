@@ -68,7 +68,7 @@ typedef struct QuadTree {
   int max_elements;
 } QuadTree;
 
-void QuadTree_Init(QuadTree* qt, const Line** lines, const int width, const int height, const int max_depth, const int max_elements);
+void QuadTree_Init(QuadTree* qt, Line** lines, const int width, const int height, const int max_depth, const int max_elements);
 void QuadTree_Free(QuadTree* qt);
 void QuadTree_Clear(QuadTree* qt);
 void QuadTree_Insert(QuadTree* qt, const unsigned int line_id, double time_step);
