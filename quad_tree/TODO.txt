@@ -1,0 +1,4 @@
+- Verify future line calculation
+- Verify child rect exclusivity calculation
+- QuadTree_QueryLines uses alot of the same code as QuadTree_FindNode()
+  Maybe find a way to abstract this out into one method
