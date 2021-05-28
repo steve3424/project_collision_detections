@@ -80,7 +80,7 @@ void QuadTree_Free(QuadTree* qt);
 void QuadTree_Clear(QuadTree* qt);
 void QuadTree_Insert(QuadTree* qt, const unsigned int line_id, const double time_step);
 SmallList QuadTree_QueryLines(const QuadTree* qt, const unsigned int line_id, const double time_step);
-//SmallList QuadTree_GetRectLineSegments(const QuadTree* qt);
+SmallList QuadTree_GetRectLineSegments(const QuadTree* qt);
 void QuadTree_PrintInfo(const QuadTree* qt);
 //void QuadTree_PrintEntireTree(const QuadTree* qt);
 

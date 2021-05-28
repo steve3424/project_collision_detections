@@ -197,7 +197,7 @@ CollisionWorld* CollisionWorld_new(const unsigned int capacity) {
     free(collisionWorld);
     return NULL;
   }
-  const int max_depth = 5;
+  const int max_depth = 10;
   const int max_elements = 10;
   QuadTree_Init(collisionWorld->quad_tree, collisionWorld->lines, WINDOW_WIDTH, WINDOW_HEIGHT, max_depth, max_elements);
   return collisionWorld;

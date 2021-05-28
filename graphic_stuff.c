@@ -51,40 +51,40 @@ int visibility;
 int windowwidth;
 int windowheight;
 
-//static void DrawQuadTree(Display *display, Drawable drawable) {
-//  SmallList quad_tree_segments = QuadTree_GetRectLineSegments(gLineDemo->collisionWorld->quad_tree);
-//    
-//  Colormap cmap;
-//  XGCValues gcval;
-//  XColor color;
-//  XColor ignore;
-//  int64_t fgcolor;
-//  GC green;
-//
-//  cmap = DefaultColormap(display, screen);
-//  XAllocNamedColor(display, cmap, "green", &color, &ignore);
-//  fgcolor = color.pixel;
-//  gcval.foreground = fgcolor;
-//  green = XCreateGC(display, window, GCForeground, &gcval);
-//
-//  const int four_power_of_8 = 65536;
-//  if(quad_segments == NULL) {
-//    quad_segments = malloc(four_power_of_8 * sizeof(XSegment));
-//  }
-//
-//  Line* line;
-//  for(int i = 0; i < quad_tree_segments.num_elements; ++i) {
-//    line = SmallList_GetAtIndexRef(&quad_tree_segments, i);
-//    quad_segments[i].x1 = (int16_t)line->p1.x;
-//    quad_segments[i].y1 = (int16_t)line->p1.y;
-//    quad_segments[i].x2 = (int16_t)line->p2.x;
-//    quad_segments[i].y2 = (int16_t)line->p2.y;
-//  }
-//
-//  XDrawSegments(display, drawable, green, quad_segments, quad_tree_segments.num_elements);
-//
-//  SmallList_Free(&quad_tree_segments);
-//}
+static void DrawQuadTree(Display *display, Drawable drawable) {
+  SmallList quad_tree_segments = QuadTree_GetRectLineSegments(gLineDemo->collisionWorld->quad_tree);
+    
+  Colormap cmap;
+  XGCValues gcval;
+  XColor color;
+  XColor ignore;
+  int64_t fgcolor;
+  GC green;
+
+  cmap = DefaultColormap(display, screen);
+  XAllocNamedColor(display, cmap, "green", &color, &ignore);
+  fgcolor = color.pixel;
+  gcval.foreground = fgcolor;
+  green = XCreateGC(display, window, GCForeground, &gcval);
+
+  const int four_power_of_8 = 65536;
+  if(quad_segments == NULL) {
+    quad_segments = malloc(four_power_of_8 * sizeof(XSegment));
+  }
+
+  Line* line;
+  for(int i = 0; i < quad_tree_segments.num_elements; ++i) {
+    line = SmallList_GetAtIndexRef(&quad_tree_segments, i);
+    quad_segments[i].x1 = (int16_t)line->p1.x;
+    quad_segments[i].y1 = (int16_t)line->p1.y;
+    quad_segments[i].x2 = (int16_t)line->p2.x;
+    quad_segments[i].y2 = (int16_t)line->p2.y;
+  }
+
+  XDrawSegments(display, drawable, green, quad_segments, quad_tree_segments.num_elements);
+
+  SmallList_Free(&quad_tree_segments);
+}
 
 static void drawLineSegments(Display *display, Drawable drawable) {
   Line *line;
@@ -147,9 +147,9 @@ static void drawLineSegments(Display *display, Drawable drawable) {
     }
   }
 
-  //if(quad_tree_flag && visualize_flag) {
-  //  DrawQuadTree(display, drawable);
-  //}
+  if(quad_tree_flag && visualize_flag) {
+    DrawQuadTree(display, drawable);
+  }
   XDrawSegments(display, drawable, red, segments, red_segments_count);
   XDrawSegments(display, drawable, gray, gray_segments, gray_segments_count);
 

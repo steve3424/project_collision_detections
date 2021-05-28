@@ -52,6 +52,83 @@ static inline bool QuadTree_LineInRect(const Line* line, const QuadRect* rect) {
   return p1_in_rect && p2_in_rect;
 }
 
+SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
+	SmallList rect_line_segments;
+	SmallList_Init(&rect_line_segments, sizeof(Line));
+
+	QuadNodeData root_node_data = QuadTree_GetRootNodeData(qt);
+	SmallList to_process;
+	SmallList_Init(&to_process, sizeof(QuadNodeData));
+	SmallList_PushBack(&to_process, &root_node_data);
+	while(0 < to_process.num_elements) {
+		QuadNodeData* current_node_data = SmallList_PopBackRef(&to_process);
+		QuadNode* current_node = SmallList_GetAtIndexRef(&qt->quad_nodes,
+								  current_node_data->index);
+
+		QuadRect* rect = &current_node_data->rect;
+		Line lbrt[4];
+		lbrt[0].p1.x = rect->mid_x - rect->size_x;	
+		lbrt[0].p1.y = rect->mid_y - rect->size_y;	
+		lbrt[0].p2.x = lbrt[0].p1.x;	
+		lbrt[0].p2.y = rect->mid_y + rect->size_y;	
+
+		lbrt[1].p1.x = rect->mid_x - rect->size_x;	
+		lbrt[1].p1.y = rect->mid_y + rect->size_y;	
+		lbrt[1].p2.x = rect->mid_x + rect->size_x;	
+		lbrt[1].p2.y = lbrt[1].p1.y;	
+
+		lbrt[2].p1.x = rect->mid_x + rect->size_x;	
+		lbrt[2].p1.y = rect->mid_y - rect->size_y;	
+		lbrt[2].p2.x = lbrt[2].p1.x;	
+		lbrt[2].p2.y = rect->mid_y + rect->size_y;	
+		
+		lbrt[3].p1.x = rect->mid_x - rect->size_x;	
+		lbrt[3].p1.y = rect->mid_y - rect->size_y;	
+		lbrt[3].p2.x = rect->mid_x + rect->size_x;	
+		lbrt[3].p2.y = lbrt[3].p1.y;	
+
+		for(int i = 0; i < 4; ++i) {
+			SmallList_PushBack(&rect_line_segments, &lbrt[i]);
+		}
+
+		if(current_node->count == -1) {
+			const int child_size_x = rect->size_x >> 1;
+			const int child_size_y = rect->size_y >> 1;
+			QuadRect child_rects[4];
+			child_rects[0].mid_x  = rect->mid_x - child_size_x;
+			child_rects[0].mid_y  = rect->mid_y - child_size_y;
+			child_rects[0].size_x = child_size_x;
+			child_rects[0].size_y = child_size_y;
+
+			child_rects[1].mid_x  = rect->mid_x - child_size_x;
+			child_rects[1].mid_y  = rect->mid_y + child_size_y;
+			child_rects[1].size_x = child_size_x;
+			child_rects[1].size_y = child_size_y;
+
+			child_rects[2].mid_x  = rect->mid_x + child_size_x;
+			child_rects[2].mid_y  = rect->mid_y + child_size_y;
+			child_rects[2].size_x = child_size_x;
+			child_rects[2].size_y = child_size_y;
+
+			child_rects[3].mid_x  = rect->mid_x + child_size_x;
+			child_rects[3].mid_y  = rect->mid_y - child_size_y;
+			child_rects[3].size_x = child_size_x;
+			child_rects[3].size_y = child_size_y;
+
+			for(int i = 0; i < 4; ++i) {
+				QuadNodeData child_node_data;
+				child_node_data.rect  = child_rects[i];
+				child_node_data.index = current_node->first_child + i;
+				child_node_data.depth = current_node_data->depth + 1;
+				SmallList_PushBack(&to_process, &child_node_data);
+			}
+
+		}
+	}
+	SmallList_Free(&to_process);
+
+	return rect_line_segments;
+}
 
 // PUBLIC
 void QuadTree_Init(QuadTree* qt, Line** lines, const int width, const int height, const int max_depth, const int max_elements) {
@@ -59,7 +136,7 @@ void QuadTree_Init(QuadTree* qt, Line** lines, const int width, const int height
   assert(lines);
   assert(0 < width);
   assert(0 < height);
-  assert(0 < max_depth);
+  //assert(0 < max_depth);
    
   qt->lines = lines;
   SmallList_Init(&qt->quad_nodes, sizeof(QuadNode));
@@ -125,7 +202,7 @@ SmallList QuadTree_QueryLines(const QuadTree* qt, const unsigned int line_id, co
                 int index = node->first_child;
                 while(index != -1) {
                   element = FreeList_GetAtIndexRef(&qt->quad_elements, index);
-		  SmallList_PushBack(&output, &element->element_id);
+		  SmallList_PushBack(&output, &(element->element_id));
                   index = element->next;
                 }
 	}
