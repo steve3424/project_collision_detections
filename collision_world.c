@@ -50,11 +50,11 @@ void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld) {
   if(quad_tree_flag) {
     for (unsigned int i = 0; i < collisionWorld->numOfLines; ++i) {
       Line *l1 = collisionWorld->lines[i];
-      SmallList lines_to_check = QuadTree_QueryLines(collisionWorld->quad_tree, l1, collisionWorld->timeStep);
+      SmallList line_ids = QuadTree_QueryLines(collisionWorld->quad_tree, i, collisionWorld->timeStep);
 
-      for(unsigned int j = 0; j < lines_to_check.num_elements; ++j) {
+      for(unsigned int j = 0; j < line_ids.num_elements; ++j) {
         unsigned int id;
-        SmallList_GetAtIndexCopy(&lines_to_check, j, &id);      
+        SmallList_GetAtIndexCopy(&line_ids, j, &id);      
         Line* l2 = collisionWorld->lines[id];
         
 	if(compareLines(l1,l2) < 0) {
@@ -66,8 +66,7 @@ void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld) {
           }
 	}
       }
-
-      SmallList_Free(&lines_to_check);
+      SmallList_Free(&line_ids);
     }
   }
   else {
@@ -198,7 +197,7 @@ CollisionWorld* CollisionWorld_new(const unsigned int capacity) {
     free(collisionWorld);
     return NULL;
   }
-  const int max_depth = 8;
+  const int max_depth = 5;
   const int max_elements = 10;
   QuadTree_Init(collisionWorld->quad_tree, collisionWorld->lines, WINDOW_WIDTH, WINDOW_HEIGHT, max_depth, max_elements);
   return collisionWorld;

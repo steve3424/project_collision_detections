@@ -1,1 +1,1 @@
-./a.out -g 5000 input/koch.in
+./a.out -g 7000 input/box.in

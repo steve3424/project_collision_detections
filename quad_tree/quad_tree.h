@@ -5,20 +5,27 @@
 #include "free_list.h"
 #include "../line.h"
 
+// - used for describing which child nodes
+//   an element belongs to
+typedef struct BranchFlags {
+  unsigned int tl : 1;
+  unsigned int bl : 1;
+  unsigned int br : 1;
+  unsigned int tr : 1;
+} BranchFlags;
+
 // Tree is built out of these
-// .first_element: points to first element if it doesn't fit into any child rects
-// 		   indexes into QuadTree.quad_element_nodes
-// .first_node:    points to first branch/leaf
-//                 indexes into QuadTree.quad_nodes
-//                 4 children are stored contiguously
+// .first_child: points to first node in QuadNodes if this is branch
+//      	 points to first element in QuadElements if this is leaf
+// .count: count of elements if this is leaf
+//         -1 if this is branch
 // child branches are ordered tl, bl, br, tr
 typedef struct QuadNode {
-  int first_element;
+  int first_child;
   int count;
-  int first_node;
 } QuadNode;
 
-// One of these is stored for each element
+// One of these is stored in each leaf an element belongs in
 // .next:    points to next element in this leaf (linked list structure)
 //           indexes into QuadTree.element_nodes
 // .element: points to actual element data
@@ -71,10 +78,10 @@ typedef struct QuadTree {
 void QuadTree_Init(QuadTree* qt, Line** lines, const int width, const int height, const int max_depth, const int max_elements);
 void QuadTree_Free(QuadTree* qt);
 void QuadTree_Clear(QuadTree* qt);
-void QuadTree_Insert(QuadTree* qt, const unsigned int line_id, double time_step);
-SmallList QuadTree_QueryLines(const QuadTree* qt, const Line* line, const double time_step);
-SmallList QuadTree_GetRectLineSegments(const QuadTree* qt);
+void QuadTree_Insert(QuadTree* qt, const unsigned int line_id, const double time_step);
+SmallList QuadTree_QueryLines(const QuadTree* qt, const unsigned int line_id, const double time_step);
+//SmallList QuadTree_GetRectLineSegments(const QuadTree* qt);
 void QuadTree_PrintInfo(const QuadTree* qt);
-void QuadTree_PrintEntireTree(const QuadTree* qt);
+//void QuadTree_PrintEntireTree(const QuadTree* qt);
 
 #endif
