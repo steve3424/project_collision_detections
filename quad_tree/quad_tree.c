@@ -70,17 +70,10 @@ SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
 	SmallList rect_line_segments;
 	SmallList_Init(&rect_line_segments, sizeof(Line));
 
+	// push outer segments of root rect
 	QuadNodeData root_node_data = QuadTree_GetRootNodeData(qt);
-	SmallList to_process;
-	SmallList_Init(&to_process, sizeof(QuadNodeData));
-	SmallList_PushBack(&to_process, &root_node_data);
-	while(0 < to_process.num_elements) {
-		QuadNodeData current_node_data;
-		SmallList_PopBackCopy(&to_process, &current_node_data);
-		QuadNode* current_node = SmallList_GetAtIndexRef(&qt->quad_nodes,
-								  current_node_data.index);
-
-		QuadRect* rect = &current_node_data.rect;
+	{
+		QuadRect* rect = &root_node_data.rect;
 		Line lbrt[4];
 		lbrt[0].p1.x = rect->mid_x - rect->size_x;	
 		lbrt[0].p1.y = rect->mid_y - rect->size_y;	
@@ -101,11 +94,40 @@ SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
 		lbrt[3].p1.y = rect->mid_y - rect->size_y;	
 		lbrt[3].p2.x = rect->mid_x + rect->size_x;	
 		lbrt[3].p2.y = lbrt[3].p1.y;	
-
+		
 		for(int i = 0; i < 4; ++i) {
 			SmallList_PushBack(&rect_line_segments, &lbrt[i]);
 		}
+	}
 
+
+	SmallList to_process;
+	SmallList_Init(&to_process, sizeof(QuadNodeData));
+	SmallList_PushBack(&to_process, &root_node_data);
+	while(0 < to_process.num_elements) {
+		QuadNodeData current_node_data;
+		SmallList_PopBackCopy(&to_process, &current_node_data);
+		QuadNode* current_node = SmallList_GetAtIndexRef(&qt->quad_nodes,
+								  current_node_data.index);
+
+		// add cross section segments
+		QuadRect* rect = &current_node_data.rect;
+		Line lbrt[2];
+		lbrt[0].p1.x = rect->mid_x;
+		lbrt[0].p1.y = rect->mid_y - rect->size_y;	
+		lbrt[0].p2.x = rect->mid_x;
+		lbrt[0].p2.y = rect->mid_y + rect->size_y;	
+
+		lbrt[1].p1.x = rect->mid_x - rect->size_x;	
+		lbrt[1].p1.y = rect->mid_y;
+		lbrt[1].p2.x = rect->mid_x + rect->size_x;	
+		lbrt[1].p2.y = rect->mid_y;
+
+		for(int i = 0; i < 2; ++i) {
+			SmallList_PushBack(&rect_line_segments, &lbrt[i]);
+		}
+
+		// grab child nodes if this is branch
 		if(current_node->count == -1) {
 			const int child_size_x = rect->size_x >> 1;
 			const int child_size_y = rect->size_y >> 1;
