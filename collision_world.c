@@ -47,7 +47,12 @@ void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld) {
 
   IntersectionEventList intersectionEventList = IntersectionEventList_make();
 
-  if(quad_tree_flag) {
+  if(collisionWorld->using_quad_tree) {
+    // instead of updating the tree we just re-init everytime
+    // it is cleared and then filled so that it is filled when referenced outside of
+    // this loop (e.g. graphics_stuff.c)
+    CollisionWorld_ClearQuadTree(collisionWorld);
+    CollisionWorld_FillQuadTree(collisionWorld);
     for (unsigned int i = 0; i < collisionWorld->numOfLines; ++i) {
       Line *l1 = collisionWorld->lines[i];
       SmallList line_ids = QuadTree_QueryLines(collisionWorld->quad_tree, i, collisionWorld->timeStep);
@@ -57,14 +62,14 @@ void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld) {
         SmallList_GetAtIndexCopy(&line_ids, j, &id);      
         Line* l2 = collisionWorld->lines[id];
         
-	if(compareLines(l1,l2) < 0) {
-          IntersectionType intersectionType = intersect(l1, l2, collisionWorld->timeStep);
-          if (intersectionType != NO_INTERSECTION) {
-            IntersectionEventList_appendNode(&intersectionEventList, l1, l2,
-                                             intersectionType);
-            collisionWorld->numLineLineCollisions++;
-          }
-	}
+	    if(compareLines(l1,l2) < 0) {
+              IntersectionType intersectionType = intersect(l1, l2, collisionWorld->timeStep);
+              if (intersectionType != NO_INTERSECTION) {
+                IntersectionEventList_appendNode(&intersectionEventList, l1, l2,
+                                                 intersectionType);
+                collisionWorld->numLineLineCollisions++;
+              }
+	    }
       }
       SmallList_Free(&line_ids);
     }
@@ -164,8 +169,8 @@ void CollisionWorld_lineWallCollision(CollisionWorld* collisionWorld) {
   }
 }
 
-
-void CollisionWorld_InitQuadTree(CollisionWorld* collisionWorld) {
+// quad_tree stuff
+void CollisionWorld_FillQuadTree(CollisionWorld* collisionWorld) {
     for(int i = 0; i < collisionWorld->numOfLines; ++i) {
       QuadTree_Insert(collisionWorld->quad_tree, collisionWorld->lines[i]->id, collisionWorld->timeStep);
     }
@@ -175,7 +180,7 @@ void CollisionWorld_ClearQuadTree(CollisionWorld* collisionWorld) {
     QuadTree_Clear(collisionWorld->quad_tree);
 }
 
-CollisionWorld* CollisionWorld_new(const unsigned int capacity) {
+CollisionWorld* CollisionWorld_new(const unsigned int capacity, bool quad_tree_flag) {
   assert(capacity > 0);
 
   CollisionWorld* collisionWorld = malloc(sizeof(CollisionWorld));
@@ -183,23 +188,26 @@ CollisionWorld* CollisionWorld_new(const unsigned int capacity) {
     return NULL;
   }
 
-
   collisionWorld->numLineWallCollisions = 0;
   collisionWorld->numLineLineCollisions = 0;
   collisionWorld->timeStep = 0.5;
   collisionWorld->lines = malloc(capacity * sizeof(Line*));
   collisionWorld->numOfLines = 0;
+  collisionWorld->using_quad_tree = quad_tree_flag;
 
   // QUAD_TREE
   collisionWorld->quad_tree = malloc(sizeof(QuadTree));
   if(collisionWorld->quad_tree == NULL) {
-    free(collisionWorld->lines);
+    if(collisionWorld->lines) {
+        free(collisionWorld->lines);
+    }
     free(collisionWorld);
     return NULL;
   }
   const int max_depth = 10;
   const int max_elements = 10;
   QuadTree_Init(collisionWorld->quad_tree, collisionWorld->lines, WINDOW_WIDTH, WINDOW_HEIGHT, max_depth, max_elements);
+
   return collisionWorld;
 }
 

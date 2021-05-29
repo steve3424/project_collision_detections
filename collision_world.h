@@ -36,6 +36,7 @@ struct CollisionWorld {
   // This CollisionWorld owns the Line* lines.
   Line** lines;
   QuadTree* quad_tree;
+  bool using_quad_tree;
   unsigned int numOfLines;
 
   // Record the total number of line-wall collisions.
@@ -46,48 +47,47 @@ struct CollisionWorld {
 };
 typedef struct CollisionWorld CollisionWorld;
 
-CollisionWorld* CollisionWorld_new(const unsigned int capacity);
-
+// init  and free
+CollisionWorld* CollisionWorld_new(const unsigned int capacity, bool quad_tree_flag);
 void CollisionWorld_delete(CollisionWorld* collisionWorld);
 
-// Return the total number of lines in the box.
-unsigned int CollisionWorld_getNumOfLines(CollisionWorld* collisionWorld);
 
 // Add a line into the box.  Must be under capacity.
 // This CollisionWorld becomes owner of the Line* line.
 void CollisionWorld_addLine(CollisionWorld* collisionWorld, Line *line);
-
 // Get a line from box.
 Line* CollisionWorld_getLine(CollisionWorld* collisionWorld,
                              const unsigned int index);
+// Return the total number of lines in the box.
+unsigned int CollisionWorld_getNumOfLines(CollisionWorld* collisionWorld);
 
-// Update lines' situation in the box.
-void CollisionWorld_updateLines(CollisionWorld* collisionWorld);
 
-// Update position of lines.
-void CollisionWorld_updatePosition(CollisionWorld* collisionWorld);
-
-// Handle line-wall collision.
-void CollisionWorld_lineWallCollision(CollisionWorld* collisionWorld);
-
-// Detect line-line intersection.
-void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld);
 
 // Get total number of line-wall collisions.
 unsigned int CollisionWorld_getNumLineWallCollisions(
     CollisionWorld* collisionWorld);
-
 // Get total number of line-line intersections.
 unsigned int CollisionWorld_getNumLineLineCollisions(
     CollisionWorld* collisionWorld);
 
+
+
+// Update lines' situation in the box.
+void CollisionWorld_updateLines(CollisionWorld* collisionWorld);
+// Update position of lines.
+void CollisionWorld_updatePosition(CollisionWorld* collisionWorld);
+// Handle line-wall collision.
+void CollisionWorld_lineWallCollision(CollisionWorld* collisionWorld);
+// Detect line-line intersection.
+void CollisionWorld_detectIntersection(CollisionWorld* collisionWorld);
 // Update the two lines based on their intersection event.
 // Precondition: compareLines(l1, l2) < 0 must be true.
 void CollisionWorld_collisionSolver(CollisionWorld* collisionWorld, Line *l1,
                                     Line *l2,
                                     IntersectionType intersectionType);
 
-void CollisionWorld_InitQuadTree(CollisionWorld* collisionWorld);
+// quad_tree stuff
+void CollisionWorld_FillQuadTree(CollisionWorld* collisionWorld);
 void CollisionWorld_ClearQuadTree(CollisionWorld* collisionWorld);
 
 #endif  // COLLISIONWORLD_H_

@@ -36,6 +36,8 @@ struct LineDemo {
 
   // Objects for line simulation
   CollisionWorld* collisionWorld;
+
+  bool paused;
 };
 typedef struct LineDemo LineDemo;
 
@@ -43,13 +45,13 @@ LineDemo* LineDemo_new();
 void LineDemo_delete(LineDemo* lineDemo);
 
 // Add lines for line simulation at beginning.
-void LineDemo_createLines(LineDemo* lineDemo);
+void LineDemo_createLines(LineDemo* lineDemo, bool quad_tree_flag);
 
 // Set number of frames to compute.
 void LineDemo_setNumFrames(LineDemo* lineDemo, const unsigned int numFrames);
 
 // Initialize line simulation.
-void LineDemo_initLine(LineDemo* lineDemo);
+void LineDemo_initLine(LineDemo* lineDemo, bool quad_tree_flag);
 
 // Get ith line.
 Line* LineDemo_getLine(LineDemo* lineDemo, const unsigned int index);

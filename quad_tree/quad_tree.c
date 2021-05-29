@@ -15,7 +15,7 @@ static BranchFlags QuadTree_PlaceLineInBranches(const Line* line, const QuadRect
 		                                const double time_step);
 static void        QuadTree_InsertIntoLeaf(QuadTree* qt, const QuadNodeData node_data,
 		                           const unsigned int line_id, const double time_step);
-static bool	   QuadTree_LineAlreadyQueried(SmallList const * sl, const unsigned int line_id);
+static bool	       QuadTree_LineAlreadyQueried(SmallList const * sl, const unsigned int line_id);
 static void        QuadTree_PrintQuadNodeData(const QuadNodeData* element);
 static void        QuadTree_PrintQuadRect(const QuadRect* rect);
 //static void QuadTree_PrintElements(const QuadTree* qt, const unsigned int first_child_index, const int depth);

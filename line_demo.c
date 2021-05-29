@@ -35,8 +35,10 @@ static char* LineDemo_input_file_path;
 
 // The main simulation loop
 bool LineDemo_update(LineDemo* lineDemo) {
-  lineDemo->count++;
-  CollisionWorld_updateLines(lineDemo->collisionWorld);
+  if(lineDemo->paused == false) {
+      lineDemo->count++;
+      CollisionWorld_updateLines(lineDemo->collisionWorld);
+  }
   if (lineDemo->count > lineDemo->numFrames) {
     return false;
   }
@@ -56,6 +58,7 @@ LineDemo* LineDemo_new() {
   lineDemo->count = 0;
   lineDemo->numFrames = 0;
   lineDemo->collisionWorld = NULL;
+  lineDemo->paused = false;
   return lineDemo;
 }
 
@@ -65,7 +68,7 @@ void LineDemo_delete(LineDemo* lineDemo) {
 }
 
 // Read in lines from line.in and add them into collision world for simulation.
-void LineDemo_createLines(LineDemo* lineDemo) {
+void LineDemo_createLines(LineDemo* lineDemo, bool quad_tree_flag) {
   unsigned int lineId = 0;
   unsigned int numOfLines;
   window_dimension px1;
@@ -83,7 +86,7 @@ void LineDemo_createLines(LineDemo* lineDemo) {
   }
 
   fscanf(fin, "%d\n", &numOfLines);
-  lineDemo->collisionWorld = CollisionWorld_new(numOfLines);
+  lineDemo->collisionWorld = CollisionWorld_new(numOfLines, quad_tree_flag);
 
   while (EOF
       != fscanf(fin, "(%lf, %lf), (%lf, %lf), %lf, %lf, %d\n", &px1, &py1, &px2,
@@ -114,8 +117,8 @@ void LineDemo_setNumFrames(LineDemo* lineDemo, const unsigned int numFrames) {
   lineDemo->numFrames = numFrames;
 }
 
-void LineDemo_initLine(LineDemo* lineDemo) {
-  LineDemo_createLines(lineDemo);
+void LineDemo_initLine(LineDemo* lineDemo, bool quad_tree_flag) {
+  LineDemo_createLines(lineDemo, quad_tree_flag);
 }
 
 Line* LineDemo_getLine(LineDemo* lineDemo, const unsigned int index) {

@@ -39,21 +39,15 @@
 static char* DEFAULT_INPUT_FILE_PATH = "input/beaver.in";
 static char* input_file_path;
 
-bool quad_tree_flag = false;
+
 bool visualize_flag = false;
 
 // For non-graphic version
 void lineMain(LineDemo *lineDemo) {
   // Loop for updating line movement simulation
   while (true) {
-    if(quad_tree_flag) {
-      CollisionWorld_InitQuadTree(lineDemo->collisionWorld);
-    }
     if (!LineDemo_update(lineDemo)) {
       break;
-    }
-    if(quad_tree_flag) {
-      CollisionWorld_ClearQuadTree(lineDemo->collisionWorld);
     }
   }
 }
@@ -66,6 +60,7 @@ int main(int argc, char *argv[]) {
   unsigned int numFrames = 1;
   extern int optind;
 
+  bool quad_tree_flag = false;
   // Process command line options.
   while ((optchar = getopt(argc, argv, "gq")) != -1) {
     switch (optchar) {
@@ -117,7 +112,7 @@ int main(int argc, char *argv[]) {
   // Create and initialize the Line simulation environment.
   LineDemo *lineDemo = LineDemo_new();
   LineDemo_setInputFile(input_file_path);
-  LineDemo_initLine(lineDemo);
+  LineDemo_initLine(lineDemo, quad_tree_flag);
   LineDemo_setNumFrames(lineDemo, numFrames);
 
   const fasttime_t start_time = gettime();

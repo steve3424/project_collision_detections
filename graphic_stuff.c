@@ -29,13 +29,15 @@
 #include "./line.h"
 #include "./line_demo.h"
 
-extern bool quad_tree_flag;
-extern bool visualize_flag;
+const int diameter = 150;
+int x_root, y_root;
+static bool draw_quad_tree = false;
 
 static LineDemo *gLineDemo = NULL;
 XSegment *segments = NULL;
 XSegment *gray_segments = NULL;
 XSegment *quad_segments = NULL;
+static int quad_segments_count = 0;
 
 
 Display *display;
@@ -51,42 +53,8 @@ int visibility;
 int windowwidth;
 int windowheight;
 
-static void DrawQuadTree(Display *display, Drawable drawable) {
-  SmallList quad_tree_segments = QuadTree_GetRectLineSegments(gLineDemo->collisionWorld->quad_tree);
-    
-  Colormap cmap;
-  XGCValues gcval;
-  XColor color;
-  XColor ignore;
-  int64_t fgcolor;
-  GC green;
-
-  cmap = DefaultColormap(display, screen);
-  XAllocNamedColor(display, cmap, "green", &color, &ignore);
-  fgcolor = color.pixel;
-  gcval.foreground = fgcolor;
-  green = XCreateGC(display, window, GCForeground, &gcval);
-
-  const int four_power_of_8 = 65536;
-  if(quad_segments == NULL) {
-    quad_segments = malloc(four_power_of_8 * sizeof(XSegment));
-  }
-
-  Line* line;
-  for(int i = 0; i < quad_tree_segments.num_elements; ++i) {
-    line = SmallList_GetAtIndexRef(&quad_tree_segments, i);
-    quad_segments[i].x1 = (int16_t)line->p1.x;
-    quad_segments[i].y1 = (int16_t)line->p1.y;
-    quad_segments[i].x2 = (int16_t)line->p2.x;
-    quad_segments[i].y2 = (int16_t)line->p2.y;
-  }
-
-  XDrawSegments(display, drawable, green, quad_segments, quad_tree_segments.num_elements);
-
-  SmallList_Free(&quad_tree_segments);
-}
-
 static void drawLineSegments(Display *display, Drawable drawable) {
+    //printf("draw called\n");
   Line *line;
   unsigned int nsegments;
   window_dimension px1;
@@ -101,6 +69,7 @@ static void drawLineSegments(Display *display, Drawable drawable) {
   int64_t fgcolor;
   GC gray;
   GC red;
+  GC green;
 
   cmap = DefaultColormap(display, screen);
   XAllocNamedColor(display, cmap, "gray", &color, &ignore);
@@ -113,11 +82,19 @@ static void drawLineSegments(Display *display, Drawable drawable) {
   gcval.foreground = fgcolor;
   red = XCreateGC(display, window, GCForeground, &gcval);
 
+  XAllocNamedColor(display, cmap, "green", &color, &ignore);
+  fgcolor = color.pixel;
+  gcval.foreground = fgcolor;
+  green = XCreateGC(display, window, GCForeground, &gcval);
+
+  const int four_power_of_8 = 65536;
   nsegments = LineDemo_getNumOfLines(gLineDemo);
-  if (segments == NULL || gray_segments == NULL) {
+  if (segments == NULL || gray_segments == NULL || quad_segments == NULL) {
     segments = malloc(nsegments * sizeof(XSegment));
     gray_segments = malloc(nsegments * sizeof(XSegment));
+    quad_segments = malloc(four_power_of_8 * sizeof(XSegment));
   }
+
   XClearWindow(display, window);
   int red_segments_count = 0;
   int gray_segments_count = 0;
@@ -147,11 +124,25 @@ static void drawLineSegments(Display *display, Drawable drawable) {
     }
   }
 
-  if(quad_tree_flag && visualize_flag) {
-    DrawQuadTree(display, drawable);
+  SmallList quad_tree_segments = QuadTree_GetRectLineSegments(gLineDemo->collisionWorld->quad_tree);
+  quad_segments_count = quad_tree_segments.num_elements;
+  for(int i = 0; i < quad_segments_count; ++i) {
+    line = SmallList_GetAtIndexRef(&quad_tree_segments, i);
+    quad_segments[i].x1 = (int16_t)line->p1.x;
+    quad_segments[i].y1 = (int16_t)line->p1.y;
+    quad_segments[i].x2 = (int16_t)line->p2.x;
+    quad_segments[i].y2 = (int16_t)line->p2.y;
   }
+  SmallList_Free(&quad_tree_segments);
+
   XDrawSegments(display, drawable, red, segments, red_segments_count);
   XDrawSegments(display, drawable, gray, gray_segments, gray_segments_count);
+  if(draw_quad_tree) {
+    XDrawSegments(display, drawable, green, quad_segments, quad_segments_count);
+  }
+  if(gLineDemo->collisionWorld->using_quad_tree) {
+    XDrawArc(display, drawable, red, x_root, y_root, diameter, diameter, 0, 360*64);
+  }
 
   XSync(display, 0);
 }
@@ -163,47 +154,54 @@ static void checkEvent() {
   while ((XPending(display) > 0) || (block == true)) {
     XNextEvent(display, &event);
     switch (event.type) {
+      case MotionNotify:
+      {
+        x_root = event.xmotion.x - (diameter / 2) - 2;
+        y_root = event.xmotion.y - (diameter / 2) - 3;
+      } break;
       case KeyPress:
       {
-	switch((int)event.xkey.keycode) {
+	    switch((int)event.xkey.keycode) {
           // space bar
-	  // toggles block to pause sim
-	  case 65:
+	      // toggles block to pause sim
+	      case 65:
           {
- 	    if(block) {
-	      block = false;
-	    }
-	    else {
-	      block = true;
-	    }
-	  } break;
-	
-	  // 'q'
-	  // toggles use of quad_tree for collision detection
-	  case 53:
+ 	        if(gLineDemo->paused) {
+	          gLineDemo->paused = false;
+	        }
+	        else {
+	          gLineDemo->paused = true;
+	        }
+	      } break;
+	    
+	      // 'q'
+	      // toggles use of quad_tree for collision detection
+	      case 53:
           {
-            if(quad_tree_flag) {
-	      quad_tree_flag = false;
-	    }
-	    else {
-	      quad_tree_flag = true;
-	    }
-	  } break;
+            if(gLineDemo->collisionWorld->using_quad_tree) {
+	          gLineDemo->collisionWorld->using_quad_tree = false;
+	        }
+	        else {
+	          gLineDemo->collisionWorld->using_quad_tree = true;
+	        }
+	      } break;
 
-	  case 60:
-	  {
-	    if(visualize_flag) {
-	      visualize_flag = false; 
-	    }
-	    else {
-	      visualize_flag = true; 
-	    }
-	  } break;
+          // 'v'
+          // for quad tree drawing
+	      case 60:
+	      {
+              if(draw_quad_tree) {
+                draw_quad_tree = false;
+              }
+              else {
+                draw_quad_tree = true;
+              }
+	      } break;
 
-	  default: 
-	  {
-	  } break;
-	}
+	      default: 
+	      {
+	      } break;
+	    }
       }
       case ReparentNotify:
         if (event.xreparent.window != window) {
@@ -302,7 +300,7 @@ static void graphicInit(int *argc, char *argv[]) {
                                2, fgcolor, bgcolor);
 
   eventmask = SubstructureNotifyMask;
-  eventmask = eventmask | KeyPressMask;
+  eventmask = eventmask | KeyPressMask | PointerMotionMask; 
   XSelectInput(display, window, eventmask);
 
   XMapWindow(display, window);
@@ -315,15 +313,9 @@ static void graphicMainLoop(bool imageOnlyFlag) {
   while (true) {
     checkEvent();
 
-    if(quad_tree_flag) {
-      CollisionWorld_InitQuadTree(gLineDemo->collisionWorld);
-    }
     drawLineSegments(display, window);
     if (!imageOnlyFlag && !LineDemo_update(gLineDemo)) {
       return;
-    }
-    if(quad_tree_flag) {
-      CollisionWorld_ClearQuadTree(gLineDemo->collisionWorld);
     }
   }
 }
