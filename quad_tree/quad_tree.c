@@ -6,17 +6,18 @@
 #include "../line.h"
 #include "../intersection_detection.h"
 
-
 // PRIVATE DECLARATIONS
-static void      QuadTree_QuadElementInsert(QuadTree* qt, const QuadNodeData node_data, 
-                                            const unsigned int line_id, const double time_step);
-static SmallList QuadTree_FindLeaves(const QuadTree* qt, const QuadNodeData node_data,
-		                     const unsigned int line_id, const double time_step);
-static BranchFlags QuadTree_PlaceLineInBranches(const Line* line, const QuadRect rect, const double time_step);
-static void QuadTree_InsertIntoLeaf(QuadTree* qt, const QuadNodeData node_data,
-		                    const unsigned int line_id, const double time_step);
-//static void QuadTree_PrintQuadNodeData(const QuadNodeData* element);
-//static void QuadTree_PrintQuadRect(const QuadRect* rect);
+static void        QuadTree_QuadElementInsert(QuadTree* qt, const QuadNodeData node_data, 
+                                              const unsigned int line_id, const double time_step);
+static SmallList   QuadTree_FindLeaves(const QuadTree* qt, const QuadNodeData node_data,
+		                       const unsigned int line_id, const double time_step);
+static BranchFlags QuadTree_PlaceLineInBranches(const Line* line, const QuadRect rect, 
+		                                const double time_step);
+static void        QuadTree_InsertIntoLeaf(QuadTree* qt, const QuadNodeData node_data,
+		                           const unsigned int line_id, const double time_step);
+static bool	   QuadTree_LineAlreadyQueried(SmallList const * sl, const unsigned int line_id);
+static void        QuadTree_PrintQuadNodeData(const QuadNodeData* element);
+static void        QuadTree_PrintQuadRect(const QuadRect* rect);
 //static void QuadTree_PrintElements(const QuadTree* qt, const unsigned int first_child_index, const int depth);
 //static void QuadTree_PrintBranches(const QuadTree* qt, const QuadRect parent_rect,
 //                                   const unsigned int first_branch_index, const int depth);
@@ -52,6 +53,19 @@ static inline bool QuadTree_LineInRect(const Line* line, const QuadRect* rect) {
   return p1_in_rect && p2_in_rect;
 }
 
+// checks if line was already added to query list
+static inline bool QuadTree_LineAlreadyQueried(SmallList const * sl, unsigned int line_id) {
+	for(int i = 0; i < sl->num_elements; ++i) {
+		unsigned int* element = SmallList_GetAtIndexRef(sl, i);
+		if(*element == line_id) {
+			return true;	
+		}
+	}
+
+	return false;
+}
+
+
 SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
 	SmallList rect_line_segments;
 	SmallList_Init(&rect_line_segments, sizeof(Line));
@@ -61,11 +75,12 @@ SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
 	SmallList_Init(&to_process, sizeof(QuadNodeData));
 	SmallList_PushBack(&to_process, &root_node_data);
 	while(0 < to_process.num_elements) {
-		QuadNodeData* current_node_data = SmallList_PopBackRef(&to_process);
+		QuadNodeData current_node_data;
+		SmallList_PopBackCopy(&to_process, &current_node_data);
 		QuadNode* current_node = SmallList_GetAtIndexRef(&qt->quad_nodes,
-								  current_node_data->index);
+								  current_node_data.index);
 
-		QuadRect* rect = &current_node_data->rect;
+		QuadRect* rect = &current_node_data.rect;
 		Line lbrt[4];
 		lbrt[0].p1.x = rect->mid_x - rect->size_x;	
 		lbrt[0].p1.y = rect->mid_y - rect->size_y;	
@@ -119,7 +134,7 @@ SmallList QuadTree_GetRectLineSegments(const QuadTree* qt) {
 				QuadNodeData child_node_data;
 				child_node_data.rect  = child_rects[i];
 				child_node_data.index = current_node->first_child + i;
-				child_node_data.depth = current_node_data->depth + 1;
+				child_node_data.depth = current_node_data.depth + 1;
 				SmallList_PushBack(&to_process, &child_node_data);
 			}
 
@@ -196,13 +211,18 @@ SmallList QuadTree_QueryLines(const QuadTree* qt, const unsigned int line_id, co
 	SmallList output;
 	SmallList_Init(&output, sizeof(unsigned int));
 	while(0 < leaves.num_elements) {
-		QuadNodeData* leaf = SmallList_PopBackRef(&leaves);
-		QuadNode* node = SmallList_GetAtIndexRef(&qt->quad_nodes, leaf->index);
+		QuadNodeData leaf;
+		SmallList_PopBackCopy(&leaves, &leaf);
+		QuadNode* node = SmallList_GetAtIndexRef(&qt->quad_nodes, leaf.index);
                 QuadElement* element;
                 int index = node->first_child;
                 while(index != -1) {
                   element = FreeList_GetAtIndexRef(&qt->quad_elements, index);
-		  SmallList_PushBack(&output, &(element->element_id));
+		  bool line_already_added = QuadTree_LineAlreadyQueried(&output, 
+				                                      element->element_id);
+		  if((element->element_id != line_id) && (!line_already_added)) {
+		  	SmallList_PushBack(&output, &element->element_id);
+		  }
                   index = element->next;
                 }
 	}
@@ -237,66 +257,69 @@ static SmallList QuadTree_FindLeaves(const QuadTree* qt, const QuadNodeData node
   SmallList_Init(&to_process_qnd, sizeof(QuadNodeData));
   SmallList_PushBack(&to_process_qnd, &node_data);
   while(0 < to_process_qnd.num_elements) {
-    const QuadNodeData* current_node_data = SmallList_PopBackRef(&to_process_qnd);
-    const QuadNode*     current_node      = SmallList_GetAtIndexRef(&qt->quad_nodes, 
-                                                                     current_node_data->index);
+    QuadNodeData current_node_data;
+    SmallList_PopBackCopy(&to_process_qnd, &current_node_data);
+    QuadNode*     current_node      = SmallList_GetAtIndexRef(&qt->quad_nodes, 
+                                                                     current_node_data.index);
     // node is leaf so add to result
     if(current_node->count != -1) {
-	    SmallList_PushBack(&leaves, current_node_data);
+	    SmallList_PushBack(&leaves, &current_node_data);
     }
     else {
       const Line* line = qt->lines[line_id];
-      BranchFlags flags = QuadTree_PlaceLineInBranches(line, current_node_data->rect, time_step);
+      BranchFlags flags = QuadTree_PlaceLineInBranches(line, current_node_data.rect, time_step);
 
-      const int child_size_x = current_node_data->rect.size_x >> 1;
-      const int child_size_y = current_node_data->rect.size_y >> 1;
+      const int child_size_x = current_node_data.rect.size_x >> 1;
+      const int child_size_y = current_node_data.rect.size_y >> 1;
       QuadNodeData child_node_data;
       QuadRect     child_rect;
       if(flags.tl) {
-          child_rect.mid_x  = current_node_data->rect.mid_x - child_size_x;
-          child_rect.mid_y  = current_node_data->rect.mid_y - child_size_y;
+          child_rect.mid_x  = current_node_data.rect.mid_x - child_size_x;
+          child_rect.mid_y  = current_node_data.rect.mid_y - child_size_y;
           child_rect.size_x = child_size_x;
           child_rect.size_y = child_size_y;
 
           child_node_data.rect  = child_rect;
 	  child_node_data.index = current_node->first_child + 0;
-	  child_node_data.depth = current_node_data->depth  + 1;
+	  child_node_data.depth = current_node_data.depth  + 1;
           SmallList_PushBack(&to_process_qnd, &child_node_data);
+
       }
 
       if(flags.bl) {
-          child_rect.mid_x  = current_node_data->rect.mid_x - child_size_x;
-          child_rect.mid_y  = current_node_data->rect.mid_y + child_size_y;
+          child_rect.mid_x  = current_node_data.rect.mid_x - child_size_x;
+          child_rect.mid_y  = current_node_data.rect.mid_y + child_size_y;
           child_rect.size_x = child_size_x;
           child_rect.size_y = child_size_y;
 
           child_node_data.rect  = child_rect;
 	  child_node_data.index = current_node->first_child + 1;
-	  child_node_data.depth = current_node_data->depth  + 1;
+	  child_node_data.depth = current_node_data.depth  + 1;
           SmallList_PushBack(&to_process_qnd, &child_node_data);
       }
 
       if(flags.br) {
-          child_rect.mid_x  = current_node_data->rect.mid_x + child_size_x;
-          child_rect.mid_y  = current_node_data->rect.mid_y + child_size_y;
+          child_rect.mid_x  = current_node_data.rect.mid_x + child_size_x;
+          child_rect.mid_y  = current_node_data.rect.mid_y + child_size_y;
           child_rect.size_x = child_size_x;
           child_rect.size_y = child_size_y;
 
           child_node_data.rect  = child_rect;
 	  child_node_data.index = current_node->first_child + 2;
-	  child_node_data.depth = current_node_data->depth  + 1;
+	  child_node_data.depth = current_node_data.depth  + 1;
+
           SmallList_PushBack(&to_process_qnd, &child_node_data);
       }
 
       if(flags.tr) {
-          child_rect.mid_x  = current_node_data->rect.mid_x + child_size_x;
-          child_rect.mid_y  = current_node_data->rect.mid_y - child_size_y;
+          child_rect.mid_x  = current_node_data.rect.mid_x + child_size_x;
+          child_rect.mid_y  = current_node_data.rect.mid_y - child_size_y;
           child_rect.size_x = child_size_x;
           child_rect.size_y = child_size_y;
 
           child_node_data.rect  = child_rect;
 	  child_node_data.index = current_node->first_child + 3;
-	  child_node_data.depth = current_node_data->depth  + 1;
+	  child_node_data.depth = current_node_data.depth  + 1;
           SmallList_PushBack(&to_process_qnd, &child_node_data);
       }
     }
@@ -308,6 +331,8 @@ static SmallList QuadTree_FindLeaves(const QuadTree* qt, const QuadNodeData node
 }
 
 static BranchFlags QuadTree_PlaceLineInBranches(const Line* line, const QuadRect rect, const double time_step) {
+	
+
   // get a copy of current_line in box coordinates
   // calculate all 4 lines of parallelogram
   Line lines[4];
@@ -452,21 +477,21 @@ static void QuadTree_InsertIntoLeaf(QuadTree* qt, const QuadNodeData node_data,
     }
 
     // insert all elements back into tree
-    QuadElement* element_to_reinsert;
+    QuadElement element_to_reinsert;
     while(0 < quad_elements_temp.num_elements) {
-    	element_to_reinsert = SmallList_PopBackRef(&quad_elements_temp);
-        QuadTree_QuadElementInsert(qt, node_data, element_to_reinsert->element_id, time_step);
+    	SmallList_PopBackCopy(&quad_elements_temp, &element_to_reinsert);
+        QuadTree_QuadElementInsert(qt, node_data, element_to_reinsert.element_id, time_step);
     }
 
     SmallList_Free(&quad_elements_temp);
   }
 }
 
-void QuadTree_PrintInfo(const QuadTree* qt) {
-  printf("\n*** QUAD TREE INFO ***\n");
-  printf("Number of nodes:         %d\n", qt->quad_nodes.num_elements);
-  printf("Number of element_nodes: %d\n", FreeList_GetNumElements(&qt->quad_elements));
-}
+//void QuadTree_PrintInfo(const QuadTree* qt) {
+//  printf("\n*** QUAD TREE INFO ***\n");
+//  printf("Number of nodes:         %d\n", qt->quad_nodes.num_elements);
+//  printf("Number of element_nodes: %d\n", FreeList_GetNumElements(&qt->quad_elements));
+//}
 
 
 //// PRINTING
@@ -536,28 +561,36 @@ void QuadTree_PrintInfo(const QuadTree* qt) {
 //
 //}
 //
-//static void QuadTree_PrintQuadNodeData(const QuadNodeData* element) {
-//  const QuadNodeData* qnd = element;
-//  printf("(index: %d depth: %d mid_xy: [%d, %d] size_xy: [%d, %d])", qnd->index,
-//                                                                   qnd->depth,
-//                                                                   qnd->rect.mid_x,
-//                                                                   qnd->rect.mid_y,
-//                                                                   qnd->rect.size_x,
-//                                                                   qnd->rect.size_y);
-//}
-//
-//static void QuadTree_PrintQuadRect(const QuadRect* rect) {
-//  assert(rect);
-//
-//  const int x_start = rect->mid_x - rect->size_x;
-//  const int x_end   = rect->mid_x + rect->size_x;
-//  const int y_start = rect->mid_y - rect->size_y;
-//  const int y_end   = rect->mid_y + rect->size_y;
-//  printf("mid: [%d,%d], x: [%d,%d], y: [%d,%d]", rect->mid_x, rect->mid_y,
-//                                                 x_start, x_end,
-//                                                 y_start, y_end);
-//}
-//
+static void QuadTree_PrintQuadNodeData(const QuadNodeData* element) {
+  const QuadNodeData* qnd = element;
+  const int x_start = qnd->rect.mid_x - qnd->rect.size_x;
+  const int x_end   = qnd->rect.mid_x + qnd->rect.size_x;
+  const int y_start = qnd->rect.mid_y - qnd->rect.size_y;
+  const int y_end   = qnd->rect.mid_y + qnd->rect.size_y;
+  printf("(index: %d depth: %d "
+         "mid_xy: [%d, %d] " 
+	 "x_range: [%d, %d] "
+	 "y_range: [%d, %d])", 
+	 qnd->index,
+         qnd->depth,
+         qnd->rect.mid_x,
+         qnd->rect.mid_y,
+         x_start, x_end,
+         y_start, y_end);
+}
+
+static void QuadTree_PrintQuadRect(const QuadRect* rect) {
+  assert(rect);
+
+  const int x_start = rect->mid_x - rect->size_x;
+  const int x_end   = rect->mid_x + rect->size_x;
+  const int y_start = rect->mid_y - rect->size_y;
+  const int y_end   = rect->mid_y + rect->size_y;
+  printf("mid: [%d,%d], x: [%d,%d], y: [%d,%d]", rect->mid_x, rect->mid_y,
+                                                 x_start, x_end,
+                                                 y_start, y_end);
+}
+
 //static void QuadTree_PrintElements(const QuadTree* qt, const unsigned int first_element_index, const int depth) {
 //    for(int i = 0; i < depth; ++i) {
 //      printf("\t");

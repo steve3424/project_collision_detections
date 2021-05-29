@@ -29,17 +29,6 @@ void SmallList_PushBack(SmallList* sl, const void* element) {
   sl->num_elements++;
 }
 
-void* SmallList_PopBackRef(SmallList* sl) {
-  assert(sl);
-  assert(0 < sl->num_elements);
-  
-  sl->num_elements--;
-  void* begin = SmallList_GetStartAddress(sl);
-  char* element = (char*)begin + (sl->num_elements * sl->element_bytes);
-
-  return (void*)element;
-}
-
 void SmallList_PopBackCopy(SmallList* sl, void* element_out) {
   assert(sl);
   assert(element_out);

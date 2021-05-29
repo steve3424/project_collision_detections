@@ -19,7 +19,6 @@ typedef struct SmallList {
 
 void  SmallList_Init(SmallList* sl, const unsigned int element_bytes);
 void  SmallList_PushBack(SmallList* sl, const void* element);
-void* SmallList_PopBackRef(SmallList* sl);
 void  SmallList_PopBackCopy(SmallList* sl, void* element_out);
 
 void* SmallList_GetAtIndexRef(const SmallList* sl, const unsigned int i);
