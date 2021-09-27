@@ -1,13 +1,7 @@
 ## Project Collision Detections
-This is the 2nd project from MIT OCW 6.172 [Performance Engineering of Software Systems 6.712](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/)
+This is the 2nd project from MIT OCW 6.172 [Performance Engineering of Software Systems 6.712](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/). The screensaver consists of a number of lines moving and bouncing off one another and the walls. The goal of the project was to speed up the collision detection algorithm from the standard n^2 search by implementing a quad tree. All of the code other than the code in /quad_tree is starter code from the course. My addition is in /quad_tree.
 
-The screensaver consists of a number of lines moving and bouncing off one another and the walls. The goal of the project was to speed up the collision detection algorithm from the standard n^2 search by implementing a quad tree.
-
-All of the code other than the code in /quad_tree is starter code from the course. My addition is in /quad_tree.
-
-### To Run
-
-The following instructions are how to run the program on Windows Subsystem for Linux version 1 Ubuntu 20.04.
+The entire project was built and tested on Windows Subsystem for Linux version 1 Ubuntu 20.04.
 
 **To build:**
 
