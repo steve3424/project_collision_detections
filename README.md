@@ -1,9 +1,18 @@
-- project_collision_detections from MIT OCW 6.712 https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/ 
+## Project Collision Detections
+This is the 2nd project from MIT OCW 6.172 [Performance Engineering of Software Systems](6.712 https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/)
 
-- I added a quad tree so far which was almost a translation of this: https://stackoverflow.com/questions/41946007/efficient-and-well-explained-implementation-of-a-quadtree-for-2d-collision-det 
+The screensaver consists of a number of lines moving and bouncing off one another and the walls. The goal of the project was to speed up the collision detection algorithm from the standard n^2 search by implementing a quad tree.
 
-- There are links in the comments to code in C++. I translated it to C and made some changes to the structure.
+All of the code other than the code in /quad_tree is starter code from the course. My addition is in /quad_tree.
 
-- Elements are stored in the lowest node that they are completely contained in. This means the elements can be stored in any node and not just leaves. Queries are slightly different too. I did this because determining if an element is in multiple child nodes is very fast. Determining exactly which child nodes it is in was slower in some edge cases. It was probably fast enough, but I didn't test it.
+### To Run
 
-- The keycodes to toggle the quad_tree, visualization, and to pause the sim are hard coded. I am not sure how to do this dynamically in xlib.
+This can be run with or without graphics. There is a shell script for each
+
+/run_tests.sh
+
+You can specify the number of frames and the input file in the shell script.
+
+/run_graphics.sh
+
+This will display the screensaver. For windows, this can work with Windows Subsystem Linux. You need to use an xserver such as [Xming](https://sourceforge.net/projects/xming/). Run "export DISPLAY=:0" or add to .bashrc. Start the xserver and run the "run_graphics.sh". By default it runs without the quad_tree enabled. Press 'q' to enable the quad_tree. With quad_tree enabled, press 'v' for a visualization.
