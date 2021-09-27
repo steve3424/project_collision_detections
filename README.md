@@ -1,5 +1,5 @@
 ## Project Collision Detections
-This is the 2nd project from MIT OCW 6.172 [Performance Engineering of Software Systems](6.712 https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/)
+This is the 2nd project from MIT OCW 6.172 [Performance Engineering of Software Systems 6.712](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-172-performance-engineering-of-software-systems-fall-2018/)
 
 The screensaver consists of a number of lines moving and bouncing off one another and the walls. The goal of the project was to speed up the collision detection algorithm from the standard n^2 search by implementing a quad tree.
 
