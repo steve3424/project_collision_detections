@@ -7,12 +7,36 @@ All of the code other than the code in /quad_tree is starter code from the cours
 
 ### To Run
 
-This can be run with or without graphics. There is a shell script for each
+The following instructions are how to run the program on Windows Subsystem for Linux version 1 Ubuntu 20.04.
 
-/run_tests.sh
+**To build:**
 
-You can specify the number of frames and the input file in the shell script.
+It is built using clang following gnu99 standard. It links to X11 library to run the graphics.
 
-/run_graphics.sh
+/build.sh - Shell script to run build command. There is also a makefile that was provided with the starter code, but everything I have done has used the build script so I can't guarantee if the makefile works properly. 
 
-This will display the screensaver. For windows, this can work with Windows Subsystem Linux. You need to use an xserver such as [Xming](https://sourceforge.net/projects/xming/). Run "export DISPLAY=:0" or add to .bashrc. Start the xserver and run the "run_graphics.sh". By default it runs without the quad_tree enabled. Press 'q' to enable the quad_tree. With quad_tree enabled, press 'v' for a visualization.
+**Run without graphics:**
+
+
+The outfile name is a.out by default. The '-q' option enables the quad_tree to be used over the default algorithm. Input files are contained in /input.
+
+Example commands:
+
+```
+./a.out    500 "beaver.in"
+./a.out -q 500 "koch.in"
+sh run_tests.sh
+```
+
+**Run with graphics:**
+
+First you have to run "export DISPLAY=:0" on the subsystem or add this to .bashrc. Next start an xserver such as [Xming](https://sourceforge.net/projects/xming/). Then run the same commands as above with '-g' option.
+
+This also runs without the quad tree by default. Press 'q' once it is running to enable the quad tree. You should see a circle around the mouse arrow once quad tree is enabled. With quad tree enabled, press 'v' to see a visualization of the tree. Press space bar to pause.
+
+Example commands:
+
+```
+./a.out -g 500 "koch.in"
+sh run_graphics.sh
+```
